@@ -1,57 +1,61 @@
-import java.io.*;
-import java.util.Arrays;
-import java.util.List;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class Main {
 
     public static void main(String[] args) {
+        GameProgress game1 = new GameProgress(24, 150, 3, 174.15);
+        GameProgress game2 = new GameProgress(19, 370, 8, 254.32);
+        GameProgress game3 = new GameProgress(78, 540, 12, 744.91);
+        saveGame("D://Games//savegames//save1.dat", game1);
+        saveGame("D://Games//savegames//save2.dat", game2);
+        saveGame("D://Games//savegames//save3.dat", game3);
 
-        //В папке Games создайте несколько директорий: src, res, savegames, temp.
-        //В каталоге src создайте две директории: main, test.
-        //В каталог res создайте три директории: drawables, vectors, icons.
+        ArrayList<String> arrayList = new ArrayList<>();
+        arrayList.add("D://Games//savegames//save1.dat");
+        arrayList.add("D://Games//savegames//save2.dat");
+        arrayList.add("D://Games//savegames//save3.dat");
 
-        File src = new File("D://Games//src");
-        File res = new File("D://Games//res");
-        File savegames = new File("D://Games//savegames");
-        File temp = new File("D://Games//temp");
-        File main = new File("D://Games//src//main");
-        File test = new File("D://Games//src//test");
-        File drawables = new File("D://Games//res//drawables");
-        File vectors = new File("D://Games//res//vectors");
-        File icons = new File("D://Games//res//icons");
-        List<File> folderList = Arrays.asList(src, res, savegames, temp, main, test, drawables, vectors, icons);
+        zipFiles("D://Games//savegames//zip.zip", arrayList);
 
-        //В подкаталоге main создайте два файла: Main.java, Utils.java.
-        //В директории temp создайте файл temp.txt.
-        File mainJava = new File("D://Games//src//main//Main.java");
-        File utilsJava = new File("D://Games//src//main//Utils.java");
-        File tempTxt = new File("D://Games//temp//temp.txt");
-        List<File> fileList = Arrays.asList(mainJava, utilsJava, tempTxt);
+        // удалите файлы сохранений, не лежащие в архиве.
+        File game1Del = new File("D://Games//savegames//save1.dat");
+        File game2Del = new File("D://Games//savegames//save2.dat");
+        File game3Del = new File("D://Games//savegames//save3.dat");
+        if (game1Del.delete()) System.out.println("Файл \"save1.dat\" удален");
+        if (game2Del.delete()) System.out.println("Файл \"save2.dat\" удален");
+        if (game3Del.delete()) System.out.println("Файл \"save3.dat\" удален");
+    }
 
-        StringBuilder log = new StringBuilder();
-
-        folderList.stream().forEach(folder -> {
-            if (folder.mkdir()) log.append("Каталог " + folder + " создан\n");
-            else log.append("Каталог " + folder + " не создан\n");
-        });
-        fileList.stream().forEach(file -> {
-            try {
-                if (file.createNewFile()) log.append("Файл " + file + " создан\n");
-                else log.append("Файл " + file + " не создан\n");
-            } catch (IOException ex) {
-                log.append(ex.getMessage() + '\n');
-            }
-        });
-        try (FileWriter fw = new FileWriter("D://Games//temp//temp.txt", false)) {
-            fw.write(log.toString());
-            fw.flush();
-        } catch (IOException ex) {
-            log.append(ex.getMessage() + '\n');
+    private static void saveGame(String path, GameProgress game) {
+        try (FileOutputStream fos = new FileOutputStream(path);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(game);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
         }
-        try (BufferedReader br = new BufferedReader(new FileReader("D://Games//temp//temp.txt"))) {
-            String s;
-            while ((s = br.readLine()) != null) System.out.println(s);
-        } catch (IOException ex) {
+    }
+
+    private static void zipFiles(String path, ArrayList<String> arrayList) {
+        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(path))) {
+            for (String arr : arrayList) {
+                try (FileInputStream fis = new FileInputStream(arr)) {
+                    ZipEntry entry = new ZipEntry(arr);
+                    zout.putNextEntry(entry);
+                    while (fis.available() > 0) {
+                        zout.write(fis.read());
+                    }
+                    zout.closeEntry();
+                } catch (Exception ex) {
+                    System.out.println(ex.getMessage());
+                }
+            }
+        } catch (Exception ex) {
             System.out.println(ex.getMessage());
         }
     }
